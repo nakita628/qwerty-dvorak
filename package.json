@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "k-dev": "pnpm -F @apps/karabiner dev",
+    "a-dev": "pnpm -F @apps/auto-hot-key dev",
     "fmt": "pnpm biome format --write ./",
     "lint": "pnpm biome lint",
     "test": "vitest run",

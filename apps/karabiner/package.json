@@ -1,0 +1,10 @@
+{
+  "name": "@apps/karabiner",
+  "private": true,
+  "scripts": {
+    "dev": "tsx ./src/index.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.3"
+  }
+}

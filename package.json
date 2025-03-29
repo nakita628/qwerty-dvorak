@@ -1,0 +1,21 @@
+{
+  "name": "qwerty-dvorak",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "fmt": "pnpm biome format --write ./",
+    "lint": "pnpm biome lint",
+    "test": "vitest run",
+    "coverage": "vitest run --coverage"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.6.4",
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@vitest/coverage-v8": "^3.0.9",
+    "vitest": "^3.0.9"
+  }
+}

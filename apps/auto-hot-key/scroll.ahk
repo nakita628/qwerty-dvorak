@@ -1,40 +1,42 @@
 #Requires AutoHotkey v2.0
+#SingleInstance Force
 
 ; ------------------------------------------------------------------------------
 ; グローバル変数
 ; ------------------------------------------------------------------------------
-global deferred    := false  ; 「右クリックを送るかどうか」未確定フラグ
-global isScrolling := false  ; ドラッグによるスクロール中かどうか
+global deferred    := false  ; 右クリック(Down)を保留中かどうか
+global isScrolling := false  ; スクロールモードに入っているかどうか
 global lastX       := 0
 global lastY       := 0
 global scrollMult  := 4      ; スクロール速度の係数
 
 ; ------------------------------------------------------------------------------
-; 右ボタン押下：OSへのRightButton Downをブロック、座標を記録＆タイマー開始
+; 右ボタン押下: OSへのRightButton Downをブロックし、座標取得＆タイマー開始
 ; ------------------------------------------------------------------------------
 *RButton:: {
     deferred    := true
     isScrolling := false
     MouseGetPos(&lastX, &lastY)
-    SetTimer(CheckDrag, 10)  ; 10ms間隔でCheckDrag()を呼び出しスタート
-    return  ; OSには渡さない
+    ; 10msごとにCheckDrag()を呼び出し
+    SetTimer(CheckDrag, 10)
+    return  ; OSにRButton Downは渡さない
 }
 
 ; ------------------------------------------------------------------------------
-; 右ボタン離し：ドラッグしていなければ(= deferred=true)通常の右クリックを送信し、タイマー停止
+; 右ボタン離し: ドラッグがなければ(= deferred=true) 右クリックを送信、タイマー停止
 ; ------------------------------------------------------------------------------
 *RButton Up:: {
-    SetTimer(CheckDrag, 0)   ; タイマー停止
+    SetTimer(CheckDrag, 0)  ; タイマー停止
     if deferred {
         SendEvent("{Click Right}")
     }
     deferred    := false
     isScrolling := false
-    return  ; OSには渡さない
+    return  ; OSにRButton Upは渡さない
 }
 
 ; ------------------------------------------------------------------------------
-; タイマー関数：右ボタン押下中のマウス移動を監視し、移動があればドラッグとみなしてスクロールする
+; タイマー関数: 右ボタンを押している間、マウス移動を監視してドラッグ→スクロールを実現
 ; ------------------------------------------------------------------------------
 CheckDrag() {
     global deferred, isScrolling, lastX, lastY, scrollMult
@@ -45,22 +47,23 @@ CheckDrag() {
         return
     }
 
-    ; 現在座標を取得して移動量を計算
+    ; 現在のマウス座標を取得
     currentX := 0
     currentY := 0
     MouseGetPos(&currentX, &currentY)
+
     dx := currentX - lastX
     dy := currentY - lastY
 
-    ; 少しでも動いた → ドラッグと判定
+    ; わずかでも動きがあればドラッグと判定
     if (Abs(dx) > 0 || Abs(dy) > 0) {
-        ; まだ「右クリック保留中」ならスクロールモードへ
+        ; まだ右クリック送信を保留していたらスクロールモードへ移行
         if deferred {
             deferred    := false
             isScrolling := true
         }
 
-        ; スクロールモードの場合、移動量に応じてホイールイベントを送る
+        ; スクロールモード中なら移動量に応じてホイールイベントを送る
         if isScrolling {
             lastX := currentX
             lastY := currentY
@@ -70,7 +73,7 @@ CheckDrag() {
 }
 
 ; ------------------------------------------------------------------------------
-; 横・縦のスクロールを送る関数
+; 水平・垂直スクロールを送る関数
 ; ------------------------------------------------------------------------------
 SendScroll(dx, dy) {
     ; dx>0 → WheelRight, dx<0 → WheelLeft

@@ -2,63 +2,61 @@
 #InstallMouseHook
 
 ; ------------------------------------------------------------------------------
-; グローバル変数定義
+; グローバル変数
 ; ------------------------------------------------------------------------------
-global deferred := false   ; 「右クリックを送るかどうか保留中か」を示すフラグ
-global isScrolling := false
+global deferred := false     ; 右クリックを保留しているかどうか
+global isScrolling := false  ; 右ドラッグによるスクロール中かどうか
 global lastX := 0, lastY := 0
 
 ; ------------------------------------------------------------------------------
-; 右ボタン押下：システム側へのイベント送信をブロックし、監視用フラグを初期化
+; 右ボタン押下時：OSへのRightButton Downイベントをブロックし、保留フラグをセット
 ; ------------------------------------------------------------------------------
 *RButton::
 {
     deferred := true
     isScrolling := false
     MouseGetPos(&lastX, &lastY)
-    return  ; システムへは渡さない
+    return  ; システム（OS）へは渡さない
 }
 
 ; ------------------------------------------------------------------------------
-; 右ボタン離し：もしドラッグが発生していなければ(= deferred = true)通常の右クリックを送信
+; 右ボタン離し時：もしドラッグしていなければ(= deferred = true)通常の右クリックを送る
 ; ------------------------------------------------------------------------------
 *RButton Up::
 {
     if deferred {
-        ; 右ドラッグしていない → 通常の右クリック
         SendEvent("{Click Right}")
     }
     return  ; システムへは渡さない
 }
 
 ; ------------------------------------------------------------------------------
-; 右ボタンを押しながらのマウス移動をフック
-; 初回移動でスクロールモードへ移行し、以後は移動量をホイールイベントに変換
+; 右ボタンを押しっぱなし中のマウス移動をフック
+; 最初の移動で "スクロールモード" に切り替え、移動量をホイールイベントに変換
 ; ------------------------------------------------------------------------------
-#HotIf GetKeyState("RButton", "P")  ; RButton を物理的に押している時だけ有効
+#HotIf GetKeyState("RButton", "P")  ; 物理的にRButtonを押している間のみ有効
     *~$MouseMove::
     {
         if deferred {
-            ; まだ右クリック送信を保留していた場合 → スクロールモードへ移行
+            ; ドラッグが始まったので、通常右クリックはやめてスクロールモードへ移行
             deferred := false
             isScrolling := true
         }
 
-        if isScrolling
-        {
-            ; マウス座標を取得して移動量を計算
+        if isScrolling {
+            ; 現在のマウス座標を取得
             currentX := 0
             currentY := 0
             MouseGetPos(&currentX, &currentY)
 
+            ; 移動量を計算
             dx := currentX - lastX
             dy := currentY - lastY
             lastX := currentX
             lastY := currentY
 
-            if (dx != 0 || dy != 0)
-            {
-                ; 移動量を増幅してスクロールイベントを送る
+            ; 移動があった分だけスクロールさせる
+            if (dx != 0 || dy != 0) {
                 scrollMult := 4
                 SendScroll(dx * scrollMult, dy * scrollMult)
             }
@@ -72,26 +70,22 @@ global lastX := 0, lastY := 0
 ; ------------------------------------------------------------------------------
 SendScroll(dx, dy)
 {
-    ; X軸（水平）: dx > 0 → WheelRight, dx < 0 → WheelLeft
-    if (dx > 0)
-    {
+    ; dx > 0 → WheelRight, dx < 0 → WheelLeft
+    if (dx > 0) {
         Loop dx
             SendEvent("{WheelRight}")
     }
-    else if (dx < 0)
-    {
+    else if (dx < 0) {
         Loop -dx
             SendEvent("{WheelLeft}")
     }
 
-    ; Y軸（垂直）: dy > 0 → WheelDown, dy < 0 → WheelUp
-    if (dy > 0)
-    {
+    ; dy > 0 → WheelDown, dy < 0 → WheelUp
+    if (dy > 0) {
         Loop dy
             SendEvent("{WheelDown}")
     }
-    else if (dy < 0)
-    {
+    else if (dy < 0) {
         Loop -dy
             SendEvent("{WheelUp}")
     }
